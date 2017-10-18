@@ -15,6 +15,15 @@
 # limitations under the License.
 
 # [START imports]
+
+import os
+import webapp2
+import logging
+import datetime
+ 
+import config
+from google.appengine.api import memcache
+
 import os
 import urllib
 import logging
@@ -122,9 +131,43 @@ class Guestbook(webapp2.RequestHandler):
 # [END guestbook]
 
 
+
+
+
+# [START guestbook]
+class WebHandler(webapp2.RequestHandler):
+    '''Base handler for site'''
+ 
+    def __init__(self, request, response):
+        self.initialize(request, response)
+        self.session_identifier = 'gaesessid'
+        self.session_id = None
+        self.init_session()
+ 
+    def init_session(self):
+        session_id = self.request.cookies.get(self.session_identifier)
+        if not session_id:
+            session_id = dclab.generate_uuid()
+            self.response.headers.add_header('Set-Cookie', '%s=%s; path=/' % (self.session_identifier, session_id))
+ 
+        self.session_id = session_id
+ 
+    def set_session_var(self, name, value):
+        memkey = '%s-%s' % (self.session_id, name)
+        memcache.add(key="weather_USA_98105", value="raining", time=3600)
+
+        memcache.add(memkey, value, 86400)
+ 
+    def get_session_var(self, name):
+        memkey = '%s-%s' % (self.session_id, name)
+        return memcache.get(memkey)
+# [END guestbook]
+
+
 # [START app]
 app = webapp2.WSGIApplication([
     ('/', MainPage),
     ('/sign', Guestbook),
+    ('/session', SessionTest),
 ], debug=True)
 # [END app]
